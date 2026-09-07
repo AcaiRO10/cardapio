@@ -19,13 +19,41 @@ const A=['Açaí Natural Artesanal','Açaí Morango Artesanal','Açaí Banana Ar
 const S=['Sorvete Chocolate','Sorvete Morango','Sorvete Coco','Sorvete Maracujá','Sorvete Abacaxi','Sorvete Flocos','Sorvete Chiclete','Sorvete Blue Ice','Sorvete Pistache','Sorvete Sensação','Sorvete Chocomenta','Sorvete Ninho c/ Nutella','Sorvete Yogurt','Sorvete Passas ao Rum','Sorvete Creme','Sorvete Rafaello','Sorvete Pavê'];
 const C=['Leite em pó','Paçoca','Amendoim','Granola','Aveia','Chocoboll','Sucrilhos','Coco ralado','Granulado preto','Granulado colorido','Flocos de arroz','Jujuba','Amendoim colorido'];
 const T=['Leite condensado','Chocolate','Morango','Tutti-frutti','Menta','Mel','Caramelo','Doce de leite','Cassis','Açaí','Amendoim','Limão','Maracujá','Abacaxi','Banana','Uva'];
-const E=['Creme de Ninho','Creme de avelã','Creme de pistache','Creme de choc. ao leite','Creme de choc. branco','Doce de Leite','Chantilly','Ouro Branco','Sonho de Valsa','Banana','Kit Kat','Gotas de chocolate'];
+const E=['Creme de Ninho','Creme de avelã','Creme de pistache','Creme de choc. ao leite','Creme de choc. branco','Doce de Leite','Chantilly','Ouro Branco','Sonho de Valsa','Banana','Morango','Kit Kat','Gotas de chocolate'];
 const sizes=[['300ml',12],['400ml',15],['500ml',17],['700ml',22],['1100ml',28],['5 Litros',112]];
 const snacks=['Italiano de queijo e presunto','Italiano de cebola','Italiano de frango com catupiry','Italiano de calabresa com queijo','Pastel de forno de frango','Hambúrguer com cheddar'];
-const drinks=[['Coca-Cola Original 350ml',7.5],['Fanta Uva 350ml',7.5],['Guaraná Antarctica 350ml',7.5],['Guaravita 290ml',3.5]];
+const drinks=[['Coca-Cola Original 350ml',7.5],['Coca-Cola Zero 350ml',7.5],['Fanta Uva 350ml',7.5],['Guaraná Antarctica 355ml',7.5],['Guaravita 290ml',3.5]];
 let cart=[],delivery={ok:false,lat:0,lng:0,d:0,fee:0};
+let dbProducts=[];
+const cupImg={'300ml':'assets/copo_300_700.jpg','400ml':'assets/copo_300_700.jpg','500ml':'assets/copo_300_700.jpg','700ml':'assets/copo_300_700.jpg','1100ml':'assets/pote_1l.jpg','5 Litros':'assets/pote_5l.jpg'};
+const snackImg={
+ 'Italiano de queijo e presunto':'assets/italianos.jpg',
+ 'Italiano de cebola':'assets/italianos.jpg',
+ 'Italiano de frango com catupiry':'assets/italianos.jpg',
+ 'Italiano de calabresa com queijo':'assets/italianos.jpg',
+ 'Pastel de forno de frango':'assets/pastel_frango.jpg',
+ 'Hambúrguer com cheddar':'assets/hamburguer_cheddar.jpg'
+};
+const drinkImg={
+ 'Coca-Cola Original 350ml':'assets/coca_original.jpg',
+ 'Coca-Cola Zero 350ml':'assets/coca_zero.jpg',
+ 'Fanta Uva 350ml':'assets/fanta_uva.jpg',
+ 'Guaraná Antarctica 355ml':'assets/guarana.jpg',
+ 'Guaravita 290ml':'assets/guaravita.jpg'
+};
+function dbImg(category,name,fallback){
+ const p=dbProducts.find(x=>x.active&&x.category===category&&String(x.name).toLowerCase()===String(name).toLowerCase());
+ return p&&p.image_url?p.image_url:fallback;
+}
+
 function card(t,d,p,k,key,img=''){return `<div class="prod searchable" data-s="${(t+' '+d).toLowerCase()}" onclick="openP('${k}','${key}')"><div><h3>${t}</h3><p>${d}</p><div class="price">${M(p)}</div></div><div class="photo">${img?`<img class="pic" src="${img}">`:`<div class="pic">${k==='snack'?'🥐':k==='drink'?'🥤':'🍧'}</div>`}<button class="plus">+</button></div></div>`}
-function render(){let h=`<section id="promo"><h2>🔥 Promoções</h2>${card('2 copos de 300ml','Monte o Copo 1 e o Copo 2 separadamente.',19.99,'double','0','assets/acai_dobro.png')}${card('1 salgado + açaí 400ml','Escolha o salgado e monte o açaí completo.',23.99,'combo','0')}</section><section id="cups"><h2>🥤 Monte seu copo</h2>`;sizes.forEach((x,i)=>h+=card('Açaí ou Sorvete '+x[0],'Escolha até 2 sabores, 5 complementos e 2 coberturas.',x[1],'cup',i));h+=`</section><section id="snacks"><h2>🥐 Salgados</h2>`;snacks.forEach((x,i)=>h+=card(x,'Escolha de 1 a 3 molhos.',11.99,'snack',i));h+=`</section><section id="drinks"><h2>🥤 Bebidas</h2>`;drinks.forEach((x,i)=>h+=card(x[0],'Bebida gelada.',x[1],'drink',i));h+='</section>';$('catalog').innerHTML=h}
+function render(){let h=`<section id="promo"><h2>🔥 Promoções</h2>${card('2 copos de 300ml','Monte o Copo 1 e o Copo 2 separadamente.',19.99,'double','0',dbImg('Promoções','2 copos de 300ml','assets/acai_dobro.png'))}${card('1 salgado + açaí 400ml','Escolha o salgado e monte o açaí completo.',23.99,'combo','0',dbImg('Promoções','1 salgado + açaí 400ml','assets/combo_salgado_acai.jpg'))}</section><section id="cups"><h2>🥤 Monte seu copo</h2>`;
+sizes.forEach((x,i)=>h+=card('Açaí ou Sorvete '+x[0],'Escolha até 2 sabores, 5 complementos e 2 coberturas.',x[1],'cup',i,dbImg('Tamanhos',x[0],cupImg[x[0]]||'assets/copo_300_700.jpg')));
+h+=`</section><section id="snacks"><h2>🥐 Salgados</h2>`;
+snacks.forEach((x,i)=>h+=card(x,'Escolha de 1 a 3 molhos.',11.99,'snack',i,dbImg('Salgados',x,snackImg[x]||'')));
+h+=`</section><section id="drinks"><h2>🥤 Bebidas</h2>`;
+drinks.forEach((x,i)=>h+=card(x[0],'Bebida gelada.',x[1],'drink',i,dbImg('Bebidas',x[0],drinkImg[x[0]]||'')));
+h+='</section>';$('catalog').innerHTML=h}
 function opts(title,arr,name,max,req=true,priceFn=null){return `<div class="group"><h3>${title}${req?'<span class="req">Obrigatório</span>':''}</h3><div class="hint">${req?'Selecione':'Escolha'} até ${max}</div><span class="counter" data-c="${name}" data-max="${max}">0 de ${max} selecionados</span>${arr.map((x,i)=>`<label class="opt"><input type="${max===1?'radio':'checkbox'}" name="${name}" value="${x}" data-max="${max}"><span class="grow">${x}</span>${priceFn?`<b>+${M(priceFn(x,i))}</b>`:''}</label>`).join('')}</div>`}
 function mandatoryGroup(title,noneLabel,arr,name,max,priceFn=null){
  const all=[noneLabel,...arr];
@@ -59,26 +87,43 @@ function readCup(p){let u=val(p+'u'),f=vals(p+'f'),w=val(p+'w'),c=vals(p+'c'),t=
 function readSnack(p,choose){let n=choose?val(p+'n'):'',m=vals(p+'m');if(choose&&!n){alert('Escolha o salgado.');return null}if(!m.length){alert('Escolha os molhos ou Sem Molho.');return null}return{n,m,d:vals(p+'d'),o:document.querySelector(`[name="${p}o"]`)?.value.trim()||''}}
 function add(k,key,base){let z={};if(k==='cup'){z.cups=[readCup('c')];if(!z.cups[0])return}if(k==='double'){z.cups=[readCup('a'),readCup('b')];if(z.cups.some(x=>!x))return}if(k==='combo'){z.cups=[readCup('c')];if(!z.cups[0])return;z.sn=readSnack('s',true);if(!z.sn)return}if(k==='snack'){z.sn=readSnack('s',false);if(!z.sn)return;z.sn.n=snacks[key]}if(k==='drink')z.dr=drinks[key][0];let title=k==='cup'?'Açaí ou Sorvete '+sizes[key][0]:k==='double'?'2 copos de 300ml':k==='combo'?'1 salgado + açaí 400ml':k==='snack'?snacks[key]:drinks[key][0];cart.push({id:crypto.randomUUID(),title,total:+base+extras(),z});closeS();bar()}
 function bar(){let n=cart.length,t=cart.reduce((a,x)=>a+x.total,0);$('cartBtn').disabled=!n;$('cartBtn').textContent=n?`Ver carrinho • ${n} ${n===1?'item':'itens'} • ${M(t)}`:'Seu carrinho está vazio'}
-function cupText(c){return `🥄 *Talher:* ${c.u==='Sim'?'Sim':'Não'}\n🍨 *Sabores:* ${c.f.join(' + ')}\n📦 *Complementos:* ${c.w}\n• ${c.c.join('\\n• ')}\n🍫 *Coberturas:*\n• ${c.t.join('\\n• ')}\n⭐ *Adicionais:*\n• ${c.e.join('\\n• ')}${c.o?`\n📝 *Obs.:* ${c.o}`:''}`}
+function lineList(items){return items.map(x=>'• '+x).join('\n')}
+function cupText(c){return `🥄 *Talher:* ${c.u==='Sim'?'Sim':'Não'}
+🍨 *Sabores:*
+${lineList(c.f)}
+📦 *Complementos:* ${c.w}
+${lineList(c.c)}
+🍫 *Coberturas:*
+${lineList(c.t)}
+⭐ *Adicionais extras:*
+${lineList(c.e)}${c.o?`
+📝 *Obs.:* ${c.o}`:''}`}
 $('cartBtn').onclick=cartView;
-function cartView(){$('ov').classList.remove('hidden');$('sheet').classList.remove('hidden');$('sticky').classList.add('hidden');let h=cart.map((x,i)=>`<div class="cartitem"><b>${i+1}. ${x.title} — ${M(x.total)}</b><div class="mini">${x.z.cups?x.z.cups.map((c,j)=>`<br><b>${x.z.cups.length>1?'Copo '+(j+1):'Copo'}</b><br>${cupText(c).replaceAll('\\n','<br>')}`).join(''):''}${x.z.sn?`<br><b>Salgado:</b> ${x.z.sn.n}<br><b>Molhos:</b><br>• ${x.z.sn.m.join('<br>• ')}<br><b>Bebidas:</b><br>• ${x.z.sn.d.length?x.z.sn.d.join('<br>• '):'Nenhuma'}`:''}${x.z.dr?'<br>'+x.z.dr:''}</div><button onclick="del('${x.id}')">Remover</button></div>`).join('');let sub=cart.reduce((a,x)=>a+x.total,0);$('sheet').innerHTML=`<div class="head"><button class="x" onclick="closeS()">×</button><b>Seu pedido</b></div><div class="body">${h}<div class="field"><label>Nome</label><input id="name"></div><div class="field"><label>Endereço completo</label><textarea id="addr"></textarea></div><button class="mainbtn" onclick="geo()">📍 Usar minha localização</button><div id="geoStatus" class="mini">${delivery.ok?`${delivery.d.toFixed(2).replace('.',',')} km • ${M(delivery.fee)}`:'Calcule a taxa de entrega pela localização.'}</div><div class="field"><label>Pagamento</label><select id="pay" onchange="troco()"><option></option><option>Pix</option><option>Dinheiro</option><option>Cartão na entrega</option></select></div><div id="change" class="field hidden"><label>Troco para quanto?</label><input id="changeFor" type="number" step=".01"></div><div class="field"><label>Observações gerais</label><textarea id="obs"></textarea></div><div class="total"><div class="row"><span>Subtotal</span><b>${M(sub)}</b></div><div class="row"><span>Entrega</span><b>${delivery.ok?M(delivery.fee):'—'}</b></div><div class="row grand"><span>Total</span><span>${M(sub+(delivery.ok?delivery.fee:0))}</span></div></div><button class="mainbtn" onclick="send()">Enviar pedido pelo WhatsApp</button></div>`}
+function cartView(){$('ov').classList.remove('hidden');$('sheet').classList.remove('hidden');$('sticky').classList.add('hidden');let h=cart.map((x,i)=>`<div class="cartitem"><b>${i+1}. ${x.title} — ${M(x.total)}</b><div class="mini">${x.z.cups?x.z.cups.map((c,j)=>`<br><b>${x.z.cups.length>1?'Copo '+(j+1):'Copo'}</b><br>${cupText(c).replaceAll('\\n','<br>')}`).join(''):''}${x.z.sn?`<br><b>Salgado:</b> ${x.z.sn.n}<br><b>Molhos:</b> ${x.z.sn.m.join(', ')}<br><b>Bebidas:</b> ${x.z.sn.d.join(', ')||'Nenhuma'}`:''}${x.z.dr?'<br>'+x.z.dr:''}</div><button onclick="del('${x.id}')">Remover</button></div>`).join('');let sub=cart.reduce((a,x)=>a+x.total,0);$('sheet').innerHTML=`<div class="head"><button class="x" onclick="closeS()">×</button><b>Seu pedido</b></div><div class="body">${h}<div class="field"><label>Nome</label><input id="name"></div><div class="field"><label>Endereço completo</label><textarea id="addr"></textarea></div><button class="mainbtn" onclick="geo()">📍 Usar minha localização</button><div id="geoStatus" class="mini">${delivery.ok?`${delivery.d.toFixed(2).replace('.',',')} km • ${M(delivery.fee)}`:'Calcule a taxa de entrega pela localização.'}</div><div class="field"><label>Pagamento</label><select id="pay" onchange="troco()"><option></option><option>Pix</option><option>Dinheiro</option><option>Cartão na entrega</option></select></div><div id="change" class="field hidden"><label>Troco para quanto?</label><input id="changeFor" type="number" step=".01"></div><div class="field"><label>Observações gerais</label><textarea id="obs"></textarea></div><div class="total"><div class="row"><span>Subtotal</span><b>${M(sub)}</b></div><div class="row"><span>Entrega</span><b>${delivery.ok?M(delivery.fee):'—'}</b></div><div class="row grand"><span>Total</span><span>${M(sub+(delivery.ok?delivery.fee:0))}</span></div></div><button class="mainbtn" onclick="send()">Enviar pedido pelo WhatsApp</button></div>`}
 function del(id){cart=cart.filter(x=>x.id!==id);bar();cart.length?cartView():closeS()}function troco(){$('change').classList.toggle('hidden',$('pay').value!=='Dinheiro')}
 function geo(){if(!navigator.geolocation)return alert('GPS indisponível.');$('geoStatus').textContent='Obtendo localização...';navigator.geolocation.getCurrentPosition(async p=>{let lat=p.coords.latitude,lng=p.coords.longitude,{data,error}=await sb.rpc('calculate_delivery_fee',{customer_lat:lat,customer_lng:lng});if(error)return $('geoStatus').textContent='Erro ao calcular.';delivery={ok:true,lat,lng,d:+data.distance_km,fee:+data.fee};cartView()},()=>$('geoStatus').textContent='Permita o acesso à localização.',{enableHighAccuracy:true,timeout:12000})}
 function itemMsg(x,i){let s=`━━━━━━━━━━━━━━
 *ITEM ${i+1} — ${x.title.toUpperCase()}*
 💰 ${M(x.total)}
-`;if(x.z.cups)x.z.cups.forEach((c,j)=>s+=`
+`;
+if(x.z.cups)x.z.cups.forEach((c,j)=>s+=`
 🥤 *${x.z.cups.length>1?'COPO '+(j+1):'COPO'}*
 ${cupText(c)}
-`);if(x.z.sn)s+=`
+`);
+if(x.z.sn)s+=`
 🥐 *SALGADO*
 • ${x.z.sn.n}
-🥫 *Molhos:* ${x.z.sn.m.join(', ')}
-🥤 *Bebida adicional:* ${x.z.sn.d.join(', ')||'Nenhuma'}${x.z.sn.o?`
+🥫 *Molhos:*
+${lineList(x.z.sn.m)}
+🥤 *Bebida adicional:*
+${x.z.sn.d.length?lineList(x.z.sn.d):'• Nenhuma'}${x.z.sn.o?`
 📝 *Obs.:* ${x.z.sn.o}`:''}
-`;if(x.z.dr)s+=`
-🥤 ${x.z.dr}
-`;return s}
+`;
+if(x.z.dr)s+=`
+🥤 *BEBIDA*
+• ${x.z.dr}
+`;
+return s}
 function send(){let name=$('name').value.trim(),addr=$('addr').value.trim(),pay=$('pay').value,obs=$('obs').value.trim();if(!name||!addr||!pay)return alert('Preencha nome, endereço e pagamento.');if(!delivery.ok)return alert('Calcule a entrega pela localização.');let sub=cart.reduce((a,x)=>a+x.total,0),tot=sub+delivery.fee,text=`🟣 *NOVO PEDIDO — AÇAÍ & CIA*
 
 👤 *Cliente:* ${name}
@@ -97,5 +142,7 @@ Entrega (${delivery.d.toFixed(2).replace('.',',')} km): ${M(delivery.fee)}
 *TOTAL: ${M(tot)}*${obs?`
 
 📝 *Observações gerais:* ${obs}`:''}`;window.open(`https://wa.me/${WA}?text=${encodeURIComponent(text)}`,'_blank')}
-$('q').oninput=e=>document.querySelectorAll('.searchable').forEach(x=>x.classList.toggle('hidden',!x.dataset.s.includes(e.target.value.toLowerCase())));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');$(b.dataset.id).scrollIntoView({behavior:'smooth'})});render();bar();
+$('q').oninput=e=>document.querySelectorAll('.searchable').forEach(x=>x.classList.toggle('hidden',!x.dataset.s.includes(e.target.value.toLowerCase())));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');$(b.dataset.id).scrollIntoView({behavior:'smooth'})});
+async function start(){try{const {data}=await sb.from('products').select('*');dbProducts=data||[]}catch(e){dbProducts=[]}render();bar()}
+start();
 </script></body></html>
