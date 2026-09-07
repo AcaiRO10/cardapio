@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Açaí & Cia — Administração</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--y:#ffd21c;--p:#5b1f78;--dark:#24142d;--bg:#fff8dc}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--dark)}
+header{background:var(--y);padding:18px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:3;box-shadow:0 2px 10px #0002}
+h1{margin:0;font-size:22px}.wrap{max-width:1050px;margin:auto;padding:22px}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 4px 18px #00000012}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font-size:15px}
+label{font-size:13px;font-weight:700;display:block;margin:9px 0 5px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer}
+.primary{background:var(--p);color:#fff}.danger{background:#b42318;color:#fff}.ghost{background:#eee}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}.muted{color:#777;font-size:13px}
+.product{border:1px solid #eee;border-radius:14px;padding:12px}.product h3{margin:0 0 5px}.price{font-weight:800;color:var(--p)}
+#app{display:none}.login{max-width:430px;margin:60px auto}.status{padding:10px;border-radius:10px;background:#f1f1f1;margin:10px 0;white-space:pre-wrap}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>🥤 Açaí & Cia — Painel</h1><button id="logout" class="ghost hidden">Sair</button></header>
+
+<div id="loginBox" class="wrap login">
+<div class="card">
+<h2>Entrar</h2>
+<p class="muted">Use o e-mail e a senha do usuário administrador criado no Supabase.</p>
+<label>E-mail</label><input id="email" type="email" placeholder="seu@email.com">
+<label>Senha</label><input id="password" type="password">
+<button class="primary" style="width:100%;margin-top:12px" id="login">Entrar</button>
+<div id="loginStatus" class="status"></div>
+</div>
+</div>
+
+<main id="app" class="wrap">
+<div class="card">
+<div class="row"><div><h2 style="margin:0">Produtos</h2><div class="muted">Edite preço, nome, categoria e disponibilidade. As alterações ficam no banco.</div></div><button class="primary" id="new">+ Novo produto</button></div>
+<div id="status" class="status"></div>
+</div>
+
+<div id="editor" class="card hidden">
+<h2 id="editorTitle">Novo produto</h2>
+<input id="pid" type="hidden">
+<div class="grid">
+<div><label>Categoria</label><input id="cat" placeholder="Ex.: Açaí"></div>
+<div><label>Nome</label><input id="name" placeholder="Ex.: Açaí Nutella"></div>
+<div><label>Preço (R$)</label><input id="price" type="number" step="0.01" min="0"></div>
+<div><label>Ordem</label><input id="sort" type="number" value="0"></div>
+</div>
+<label>Descrição</label><textarea id="desc" rows="3"></textarea>
+<label>Foto (URL opcional)</label><input id="image" placeholder="https://...">
+<label style="display:flex;gap:8px;align-items:center"><input id="active" type="checkbox" checked style="width:auto"> Disponível no cardápio</label>
+<div style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="save">Salvar</button><button class="ghost" id="cancel">Cancelar</button></div>
+</div>
+
+<div id="list"></div>
+</main>
+
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function msg(t){$('status').textContent=t||''}
+async function load(){
+  const {data,error}=await sb.from('products').select('*').order('category').order('sort_order').order('name');
+  if(error){msg('Erro: '+error.message);return}
+  const groups={}; (data||[]).forEach(p=>(groups[p.category]??=[]).push(p));
+  $('list').innerHTML='';
+  for(const [cat,items] of Object.entries(groups)){
+    const c=document.createElement('div'); c.className='card';
+    c.innerHTML='<h2>'+esc(cat)+'</h2><div class="grid">'+items.map(p=>`
+      <div class="product">
+        <div class="row"><h3>${esc(p.name)}</h3><span class="price">${money(p.price)}</span></div>
+        <div class="muted">${p.active?'Disponível':'Oculto'}${p.description?' • '+esc(p.description):''}</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="ghost" onclick='edit(${JSON.stringify(p)})'>Editar</button><button class="danger" onclick="del('${p.id}')">Excluir</button></div>
+      </div>`).join('')+'</div>';
+    $('list').appendChild(c);
+  }
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+window.edit=p=>{
+ $('editor').classList.remove('hidden'); $('editorTitle').textContent='Editar produto';
+ $('pid').value=p.id;$('cat').value=p.category;$('name').value=p.name;$('price').value=p.price;
+ $('sort').value=p.sort_order||0;$('desc').value=p.description||'';$('image').value=p.image_url||'';$('active').checked=p.active;
+ scrollTo(0,0);
+};
+$('new').onclick=()=>{['pid','cat','name','price','sort','desc','image'].forEach(x=>$(x).value='');$('sort').value=0;$('active').checked=true;$('editorTitle').textContent='Novo produto';$('editor').classList.remove('hidden');scrollTo(0,0)};
+$('cancel').onclick=()=>$('editor').classList.add('hidden');
+$('save').onclick=async()=>{
+ const payload={category:$('cat').value.trim(),name:$('name').value.trim(),price:Number($('price').value||0),sort_order:Number($('sort').value||0),description:$('desc').value.trim(),image_url:$('image').value.trim(),active:$('active').checked};
+ if(!payload.category||!payload.name){alert('Preencha categoria e nome.');return}
+ let res=$('pid').value ? await sb.from('products').update(payload).eq('id',$('pid').value) : await sb.from('products').insert(payload);
+ if(res.error){alert(res.error.message);return}
+ $('editor').classList.add('hidden'); msg('Salvo com sucesso.'); load();
+};
+window.del=async id=>{
+ if(!confirm('Excluir este produto?'))return;
+ const {error}=await sb.from('products').delete().eq('id',id);
+ if(error) alert(error.message); else load();
+};
+$('login').onclick=async()=>{
+ $('loginStatus').textContent='Entrando...';
+ const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
+ $('loginStatus').textContent=error?error.message:'';
+};
+$('logout').onclick=()=>sb.auth.signOut();
+async function boot(){
+ const {data}=await sb.auth.getSession(); const session=data.session;
+ $('loginBox').classList.toggle('hidden',!!session); $('app').style.display=session?'block':'none'; $('logout').classList.toggle('hidden',!session);
+ if(session) load();
+}
+sb.auth.onAuthStateChange(()=>boot()); boot();
+</script>
+</body></html>
