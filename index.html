@@ -33,6 +33,11 @@ header h1{margin:0;color:var(--p);font-size:34px}header p{margin:5px 0 0}
 .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:11px;font-size:15px}
 .total{font-size:22px;font-weight:900;margin:15px 0}.muted{color:var(--muted);font-size:13px}
 .badge{display:inline-block;background:#f2e5f8;color:var(--p);padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}
+.counter{display:inline-block;margin:0 0 10px;background:#f7f1fa;color:var(--p);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}
+.locbox{background:#f7f1fa;border:1px solid #eadcf0;border-radius:14px;padding:12px;margin:10px 0}
+.locok{background:#eaf8ef;border-color:#b9e2c5}
+.locbtn{width:100%;border:0;border-radius:12px;padding:12px;font-weight:900;background:#ececec;color:var(--ink);cursor:pointer}
+.maplink{display:inline-block;margin-top:8px;font-size:13px;color:var(--p);font-weight:800;text-decoration:none}
 </style>
 </head>
 <body>
@@ -51,44 +56,41 @@ header h1{margin:0;color:var(--p);font-size:34px}header p{margin:5px 0 0}
 </section>
 
 <section class="card hidden" id="step2">
-<div class="step">Etapa 2</div><h3>Você quer açaí ou sorvete?</h3>
-<div class="grid">
-<label class="option"><input type="radio" name="kind" value="Açaí"><span><strong>Açaí</strong><small>Escolha um sabor de açaí</small></span></label>
-<label class="option"><input type="radio" name="kind" value="Sorvetes"><span><strong>Sorvete</strong><small>Escolha um sabor de sorvete</small></span></label>
-</div>
+<div class="step">Etapa 2</div><h3>Escolha até 2 sabores</h3>
+<div class="counter" id="flavorCounter">0 de 2 selecionados</div>
+<p class="muted">Você pode misturar sabores de açaí e sorvete no mesmo copo.</p>
+<div class="grid" id="flavors"></div>
 <div class="actions"><button class="secondary" onclick="go(1)">Voltar</button><button class="primary" onclick="go(3)">Continuar</button></div>
 </section>
 
+
+
 <section class="card hidden" id="step3">
-<div class="step">Etapa 3</div><h3>Escolha o sabor</h3>
-<div class="grid" id="flavors"></div>
+<div class="step">Etapa 3</div><h3>Complementos grátis</h3>
+<div class="counter" id="freeCounter">0 de 5 selecionados</div>
+<p class="muted">Escolha até 5 complementos.</p>
+<div class="grid" id="free"></div>
 <div class="actions"><button class="secondary" onclick="go(2)">Voltar</button><button class="primary" onclick="go(4)">Continuar</button></div>
 </section>
 
 <section class="card hidden" id="step4">
-<div class="step">Etapa 4</div><h3>Complementos grátis</h3>
-<p class="muted">Marque quantos quiser.</p>
-<div class="grid" id="free"></div>
+<div class="step">Etapa 4</div><h3>Coberturas</h3>
+<div class="counter" id="toppingCounter">0 de 2 selecionados</div>
+<div class="grid" id="toppings"></div>
 <div class="actions"><button class="secondary" onclick="go(3)">Voltar</button><button class="primary" onclick="go(5)">Continuar</button></div>
 </section>
 
 <section class="card hidden" id="step5">
-<div class="step">Etapa 5</div><h3>Coberturas</h3>
-<div class="grid" id="toppings"></div>
-<div class="actions"><button class="secondary" onclick="go(4)">Voltar</button><button class="primary" onclick="go(6)">Continuar</button></div>
+<div class="step">Etapa 5</div><h3>Extras</h3>
+<p class="muted">Os extras são adicionados ao valor do copo.</p>
+<div class="grid" id="extras"></div>
+<div class="actions"><button class="secondary" onclick="go(4)">Voltar</button><button class="primary" onclick="go(6)">Revisar pedido</button></div>
 </section>
 
 <section class="card hidden" id="step6">
-<div class="step">Etapa 6</div><h3>Extras</h3>
-<p class="muted">Os extras são adicionados ao valor do copo.</p>
-<div class="grid" id="extras"></div>
-<div class="actions"><button class="secondary" onclick="go(5)">Voltar</button><button class="primary" onclick="go(7)">Revisar pedido</button></div>
-</section>
-
-<section class="card hidden" id="step7">
-<div class="step">Etapa 7</div><h3>Seu copo</h3>
+<div class="step">Etapa 6</div><h3>Seu copo</h3>
 <div class="summary" id="summary"></div>
-<div class="actions"><button class="secondary" onclick="go(6)">Voltar</button><button class="primary" onclick="addCup()">Adicionar ao carrinho 🛒</button></div>
+<div class="actions"><button class="secondary" onclick="go(5)">Voltar</button><button class="primary" onclick="addCup()">Adicionar ao carrinho 🛒</button></div>
 </section>
 </main>
 
@@ -99,7 +101,15 @@ header h1{margin:0;color:var(--p);font-size:34px}header p{margin:5px 0 0}
 <div id="cart"></div>
 <div class="total">Total: <span id="modalTotal">R$ 0,00</span></div>
 <div class="field"><label>Nome</label><input id="customer" placeholder="Seu nome"></div>
-<div class="field"><label>Endereço</label><textarea id="address" rows="2" placeholder="Rua, número, bairro"></textarea></div>
+<div class="field"><label>Endereço</label><textarea id="address" rows="2" placeholder="Rua, número, bairro e complemento"></textarea></div>
+<div class="field">
+  <label>Localização para calcular a entrega</label>
+  <div class="locbox" id="locbox">
+    <button class="locbtn" id="locbtn" onclick="useLocation()">📍 Usar minha localização</button>
+    <div id="locstatus" class="muted" style="margin-top:8px">A localização é usada para calcular a distância e a taxa de entrega.</div>
+    <a id="maplink" class="maplink hidden" target="_blank" rel="noopener">Conferir meu ponto no mapa</a>
+  </div>
+</div>
 <div class="field"><label>Pagamento</label><select id="payment"><option>Pix</option><option>Dinheiro</option><option>Cartão</option></select></div>
 <div class="field"><label>Observações</label><textarea id="obs" rows="2" placeholder="Ex.: campainha não funciona"></textarea></div>
 <div class="actions"><button class="secondary" onclick="closeCart()">Continuar comprando</button><button class="primary" onclick="sendWhatsApp()">Enviar pelo WhatsApp 📲</button></div>
@@ -111,7 +121,7 @@ const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let data=[],cart=[];
+let data=[],cart=[]; let delivery={ready:false,lat:null,lng:null,distance:0,fee:0};
 
 function byCat(cat){return data.filter(x=>x.category===cat && x.active)}
 function selectedVal(name){return document.querySelector(`input[name="${name}"]:checked`)?.value||''}
@@ -119,37 +129,50 @@ function checkedVals(name){return [...document.querySelectorAll(`input[name="${n
 function itemCard(p,type,name){
  return `<label class="option"><input type="${type}" name="${name}" value="${esc(p.id)}"><span><strong>${esc(p.name)}</strong>${Number(p.price)>0?`<small class="price">${money(p.price)}</small>`:''}</span></label>`
 }
+function updateCounter(name,max,id){
+ const n=document.querySelectorAll(`input[name="${name}"]:checked`).length;
+ const el=$(id); if(el) el.textContent=`${n} de ${max} selecionado${n===1?'':'s'}`;
+}
+function enforceMax(name,max,msg,counterId){
+ document.addEventListener('change',e=>{
+   if(e.target.name!==name)return;
+   const checked=document.querySelectorAll(`input[name="${name}"]:checked`);
+   if(e.target.checked && checked.length>max){e.target.checked=false;alert(msg);}
+   updateCounter(name,max,counterId);
+ });
+}
 function renderBase(){
  $('sizes').innerHTML=byCat('Tamanhos').map(p=>itemCard(p,'radio','size')).join('');
+ const flavors=[...byCat('Açaí'),...byCat('Sorvetes')];
+ $('flavors').innerHTML=flavors.map(p=>itemCard(p,'checkbox','flavor')).join('');
  $('free').innerHTML=byCat('Complementos grátis').map(p=>itemCard(p,'checkbox','free')).join('');
  $('toppings').innerHTML=byCat('Coberturas').map(p=>itemCard(p,'checkbox','topping')).join('');
  $('extras').innerHTML=byCat('Extras R$5').map(p=>itemCard(p,'checkbox','extra')).join('');
 }
 function go(n){
  if(n===2 && !selectedVal('size')) return alert('Escolha um tamanho.');
- if(n===3 && !selectedVal('kind')) return alert('Escolha Açaí ou Sorvete.');
  if(n===3){
-   const kind=selectedVal('kind');
-   $('flavors').innerHTML=byCat(kind).map(p=>itemCard(p,'radio','flavor')).join('');
+   const f=checkedVals('flavor');
+   if(f.length<1 || f.length>2) return alert('Escolha 1 ou 2 sabores.');
  }
- if(n===4 && !selectedVal('flavor')) return alert('Escolha um sabor.');
- if(n===7) renderSummary();
- for(let i=1;i<=7;i++) $('step'+i).classList.toggle('hidden',i!==n);
+ if(n===6) renderSummary();
+ for(let i=1;i<=6;i++) $('step'+i).classList.toggle('hidden',i!==n);
  window.scrollTo({top:0,behavior:'smooth'});
 }
 function getById(id){return data.find(x=>x.id===id)}
 function currentCup(){
- const size=getById(selectedVal('size')), flavor=getById(selectedVal('flavor'));
+ const size=getById(selectedVal('size'));
+ const flavors=checkedVals('flavor').map(getById).filter(Boolean);
  const free=checkedVals('free').map(getById).filter(Boolean);
  const toppings=checkedVals('topping').map(getById).filter(Boolean);
  const extras=checkedVals('extra').map(getById).filter(Boolean);
  const total=Number(size?.price||0)+extras.reduce((a,x)=>a+Number(x.price||0),0);
- return {size,flavor,free,toppings,extras,total,kind:selectedVal('kind')};
+ return {size,flavors,free,toppings,extras,total};
 }
 function renderSummary(){
  const c=currentCup();
  $('summary').innerHTML=
- `<b>${esc(c.size?.name||'')}</b> • ${esc(c.kind)} • ${esc(c.flavor?.name||'')}<br>
+ `<b>${esc(c.size?.name||'')}</b> • ${c.flavors.map(x=>esc(x.name)).join(' + ')}<br>
  ${c.free.length?'<span class="badge">Complementos</span> '+c.free.map(x=>esc(x.name)).join(', ')+'<br>':''}
  ${c.toppings.length?'<span class="badge">Coberturas</span> '+c.toppings.map(x=>esc(x.name)).join(', ')+'<br>':''}
  ${c.extras.length?'<span class="badge">Extras</span> '+c.extras.map(x=>esc(x.name)+' ('+money(x.price)+')').join(', ')+'<br>':''}
@@ -164,7 +187,7 @@ function resetBuilder(){
  document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(i=>i.checked=false);
 }
 function describe(c){
- let s=`${c.size.name} - ${c.kind} ${c.flavor.name}`;
+ let s=`${c.size.name} - Sabores: ${c.flavors.map(x=>x.name).join(' + ')}`;
  if(c.free.length)s+=` | Complementos: ${c.free.map(x=>x.name).join(', ')}`;
  if(c.toppings.length)s+=` | Coberturas: ${c.toppings.map(x=>x.name).join(', ')}`;
  if(c.extras.length)s+=` | Extras: ${c.extras.map(x=>x.name).join(', ')}`;
@@ -172,21 +195,58 @@ function describe(c){
 }
 function removeCart(id){cart=cart.filter(x=>x.cartId!==id);updateCart()}
 function updateCart(){
- const total=cart.reduce((a,x)=>a+x.total,0);
+ const subtotal=cart.reduce((a,x)=>a+x.total,0); const total=subtotal+(delivery.ready?delivery.fee:0);
  $('count').textContent=cart.length+(cart.length===1?' item':' itens');
  $('sum').textContent=money(total); $('modalTotal').textContent=money(total);
  $('cart').innerHTML=cart.length?cart.map((x,i)=>`
  <div class="line"><div><b>Copo ${i+1}</b><br><span class="muted">${esc(describe(x))}</span></div>
  <div><b>${money(x.total)}</b><br><button class="secondary" onclick="removeCart('${x.cartId}')">Remover</button></div></div>`).join(''):'<p class="muted">Seu carrinho está vazio.</p>';
+ if(cart.length){
+   $('cart').innerHTML += `<div class="line"><div><b>Entrega</b><br><span class="muted">${delivery.ready?delivery.distance.toFixed(2).replace('.',',')+' km':'Calcule pela localização'}</span></div><div><b>${delivery.ready?money(delivery.fee):'—'}</b></div></div>`;
+ }
 }
 function openCart(){$('modal').classList.add('open');updateCart()}
 function closeCart(){$('modal').classList.remove('open')}
+
+async function useLocation(){
+ if(!navigator.geolocation){
+   alert('Seu navegador não permite localização.');
+   return;
+ }
+ $('locbtn').disabled=true;
+ $('locstatus').textContent='Obtendo sua localização...';
+ navigator.geolocation.getCurrentPosition(async pos=>{
+   try{
+     const lat=pos.coords.latitude, lng=pos.coords.longitude;
+     const {data:result,error}=await sb.rpc('calculate_delivery_fee',{customer_lat:lat,customer_lng:lng});
+     if(error) throw error;
+     delivery={ready:true,lat,lng,distance:Number(result.distance_km||0),fee:Number(result.fee||0)};
+     $('locbox').classList.add('locok');
+     $('locstatus').innerHTML=`✅ Localização confirmada • <b>${delivery.distance.toFixed(2).replace('.',',')} km</b> • Taxa: <b>${money(delivery.fee)}</b>`;
+     $('maplink').href=`https://www.google.com/maps?q=${lat},${lng}`;
+     $('maplink').classList.remove('hidden');
+     updateCart();
+   }catch(err){
+     console.error(err);
+     $('locstatus').textContent = String(err.message||'').includes('DELIVERY_ORIGIN_NOT_CONFIGURED')
+       ? 'A loja ainda não configurou o ponto de saída das entregas.'
+       : 'Não foi possível calcular a entrega. Tente novamente.';
+   }finally{
+     $('locbtn').disabled=false;
+   }
+ },err=>{
+   $('locbtn').disabled=false;
+   $('locstatus').textContent='Não foi possível acessar sua localização. Permita o acesso e tente novamente.';
+ },{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+}
+
 function sendWhatsApp(){
  if(!cart.length)return alert('Adicione pelo menos um copo.');
  const name=$('customer').value.trim(), address=$('address').value.trim();
  if(!name||!address)return alert('Preencha nome e endereço.');
+ if(!delivery.ready)return alert('Use sua localização para calcular a taxa de entrega.');
  const payment=$('payment').value, obs=$('obs').value.trim();
- const total=cart.reduce((a,x)=>a+x.total,0);
+ const subtotal=cart.reduce((a,x)=>a+x.total,0); const total=subtotal+delivery.fee;
  let text='*NOVO PEDIDO — AÇAÍ & CIA*\\n\\n';
  text+=`*Cliente:* ${name}\\n*Endereço:* ${address}\\n*Pagamento:* ${payment}\\n\\n`;
  cart.forEach((x,i)=>{text+=`*Copo ${i+1}:* ${describe(x)} — ${money(x.total)}\\n`;});
@@ -199,6 +259,9 @@ async function load(){
  if(error){document.querySelector('.wrap').innerHTML='<div class="card">Erro ao carregar o cardápio.</div>';console.error(error);return}
  data=rows||[];renderBase();
 }
+enforceMax('flavor',2,'Você pode escolher no máximo 2 sabores.','flavorCounter');
+enforceMax('free',5,'Você pode escolher no máximo 5 complementos grátis.','freeCounter');
+enforceMax('topping',2,'Você pode escolher no máximo 2 coberturas.','toppingCounter');
 load();updateCart();
 </script>
 </body></html>

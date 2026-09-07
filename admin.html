@@ -57,6 +57,21 @@ button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:poin
 <div style="display:flex;gap:8px;margin-top:14px"><button class="primary" id="save">Salvar</button><button class="ghost" id="cancel">Cancelar</button></div>
 </div>
 
+
+<div class="card">
+<h2>📍 Configuração da entrega</h2>
+<p class="muted">O ponto da loja fica salvo no Supabase e não aparece no cardápio público. Você pode defini-lo usando o GPS do celular enquanto estiver na loja, ou colar latitude e longitude.</p>
+<div class="grid">
+<div><label>Latitude da loja</label><input id="storeLat" type="number" step="any" placeholder="-22.000000"></div>
+<div><label>Longitude da loja</label><input id="storeLng" type="number" step="any" placeholder="-43.000000"></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button class="ghost" id="storeGps">📍 Usar minha localização atual</button>
+<button class="primary" id="saveDelivery">Salvar ponto da loja</button>
+</div>
+<div id="deliveryStatus" class="status">Taxas: até 0,5 km grátis • até 1,5 km R$ 2 • até 3 km R$ 3 • acima de 3 km R$ 5.</div>
+</div>
+
 <div id="list"></div>
 </main>
 
@@ -108,11 +123,37 @@ $('login').onclick=async()=>{
  const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});
  $('loginStatus').textContent=error?error.message:'';
 };
+
+async function loadDelivery(){
+ const {data,error}=await sb.from('delivery_settings').select('*').eq('id',1).maybeSingle();
+ if(error){$('deliveryStatus').textContent='Execute primeiro o arquivo ATUALIZACAO_ENTREGA.sql no Supabase.';return}
+ if(data){
+   $('storeLat').value=data.store_lat ?? '';
+   $('storeLng').value=data.store_lng ?? '';
+ }
+}
+$('storeGps').onclick=()=>{
+ if(!navigator.geolocation){alert('Este navegador não permite localização.');return}
+ $('deliveryStatus').textContent='Obtendo localização...';
+ navigator.geolocation.getCurrentPosition(pos=>{
+   $('storeLat').value=pos.coords.latitude;
+   $('storeLng').value=pos.coords.longitude;
+   $('deliveryStatus').textContent='Localização preenchida. Confira e clique em Salvar ponto da loja.';
+ },()=>{$('deliveryStatus').textContent='Não foi possível obter a localização. Permita o acesso ao GPS.';},{enableHighAccuracy:true,timeout:12000});
+};
+$('saveDelivery').onclick=async()=>{
+ const lat=Number($('storeLat').value), lng=Number($('storeLng').value);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)){alert('Preencha latitude e longitude válidas.');return}
+ const {error}=await sb.from('delivery_settings').upsert({id:1,store_lat:lat,store_lng:lng,enabled:true});
+ if(error){$('deliveryStatus').textContent='Erro: '+error.message;return}
+ $('deliveryStatus').textContent='✅ Ponto da loja salvo. O endereço não é exibido no cardápio público.';
+};
+
 $('logout').onclick=()=>sb.auth.signOut();
 async function boot(){
  const {data}=await sb.auth.getSession(); const session=data.session;
  $('loginBox').classList.toggle('hidden',!!session); $('app').style.display=session?'block':'none'; $('logout').classList.toggle('hidden',!session);
- if(session) load();
+ if(session){ load(); loadDelivery(); }
 }
 sb.auth.onAuthStateChange(()=>boot()); boot();
 </script>
