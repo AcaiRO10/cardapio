@@ -1,1 +1,204 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Açaí & Cia</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>:root{--y:#ffd21c;--p:#5b1f78;--bg:#fff9df}*{box-sizing:border-box}body{margin:0;font-family:Arial;background:var(--bg);color:#28162e}.hero{background:var(--y);text-align:center;padding:28px 15px}.hero h1{margin:0;color:var(--p);font-size:34px}.wrap{max-width:850px;margin:auto;padding:15px 15px 120px}.search{position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:2}.search input{width:100%;padding:14px;border:1px solid #ddd;border-radius:15px;font-size:16px}.cat{background:#fff;padding:16px;border-radius:18px;margin:14px 0;box-shadow:0 4px 18px #0001}.cat h2{margin:0 0 10px;color:var(--p)}.item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;gap:10px}.item:last-child{border:0}.name{font-weight:bold}.price{color:var(--p);font-weight:900}.add{background:var(--p);color:white;border:0;border-radius:9px;padding:8px 12px;font-weight:bold}.cartbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);width:min(92%,600px);background:var(--p);color:white;padding:12px 15px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 25px #0005}.cartbar button{background:var(--y);border:0;border-radius:10px;padding:10px;font-weight:bold}.modal{display:none;position:fixed;inset:0;background:#0008;align-items:flex-end;z-index:5}.modal.open{display:flex}.sheet{background:white;width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px}.line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}.field{margin:10px 0}.field label{display:block;font-weight:bold;font-size:13px;margin-bottom:5px}.field input,.field textarea,.field select{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px}.actions{display:flex;gap:8px}.actions button{flex:1;padding:12px;border:0;border-radius:10px;font-weight:bold}.primary{background:var(--p);color:white}.secondary{background:#eee}</style></head><body><header class="hero"><h1>🥤 Açaí & Cia</h1><p>Monte seu pedido do seu jeito 💜</p></header><main class="wrap"><div class="search"><input id="q" placeholder="🔎 Procurar produto..."></div><div id="menu">Carregando...</div></main><div class="cartbar"><span><b id="count">0 itens</b><br><span id="sum">R$ 0,00</span></span><button onclick="openCart()">Ver carrinho 🛒</button></div><div id="modal" class="modal"><div class="sheet"><div class="actions"><h2 style="flex:1">Seu pedido</h2><button class="secondary" onclick="closeCart()">Fechar</button></div><div id="cart"></div><h3>Total: <span id="total">R$ 0,00</span></h3><div class="field"><label>Nome</label><input id="customer"></div><div class="field"><label>Endereço</label><textarea id="address" rows="2"></textarea></div><div class="field"><label>Pagamento</label><select id="payment"><option>Pix</option><option>Dinheiro</option><option>Cartão</option></select></div><div class="field"><label>Observações</label><textarea id="obs" rows="2"></textarea></div><div class="actions"><button class="secondary" onclick="closeCart()">Continuar</button><button class="primary" onclick="send()">Enviar WhatsApp 📲</button></div></div></div><script src="config.js"></script><script>const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let products=[],cart=[];const $=x=>document.getElementById(x),money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function render(){let q=$('q').value.toLowerCase(),g={};products.filter(p=>(p.name+' '+p.category).toLowerCase().includes(q)).forEach(p=>(g[p.category]??=[]).push(p));$('menu').innerHTML=Object.entries(g).map(([c,ps])=>`<section class="cat"><h2>${esc(c)}</h2>${ps.map(p=>`<div class="item"><span class="name">${esc(p.name)}</span><span>${p.price>0?`<b class="price">${money(p.price)}</b>`:''} <button class="add" onclick="add('${p.id}')">+</button></span></div>`).join('')}</section>`).join('')||'<p>Nenhum produto encontrado.</p>'}function add(id){let p=products.find(x=>x.id===id),i=cart.find(x=>x.id===id);i?i.qty++:cart.push({id,name:p.name,price:+p.price,qty:1});update()}function rem(id){let i=cart.findIndex(x=>x.id===id);if(i<0)return;if(--cart[i].qty<=0)cart.splice(i,1);update()}function update(){let n=cart.reduce((a,x)=>a+x.qty,0),t=cart.reduce((a,x)=>a+x.price*x.qty,0);$('count').textContent=n+(n===1?' item':' itens');$('sum').textContent=money(t);$('total').textContent=money(t);$('cart').innerHTML=cart.map(x=>`<div class="line"><span>${x.qty}x ${esc(x.name)}</span><span>${money(x.price*x.qty)} <button onclick="rem('${x.id}')">−</button></span></div>`).join('')||'<p>Carrinho vazio.</p>'}function openCart(){$('modal').classList.add('open');update()}function closeCart(){$('modal').classList.remove('open')}function send(){if(!cart.length)return alert('Adicione um item.');let n=$('customer').value.trim(),a=$('address').value.trim();if(!n||!a)return alert('Preencha nome e endereço.');let t=cart.reduce((s,x)=>s+x.price*x.qty,0),txt='*NOVO PEDIDO — AÇAÍ & CIA*\n\nCliente: '+n+'\nEndereço: '+a+'\nPagamento: '+$('payment').value+'\n\nItens:\n'+cart.map(x=>x.qty+'x '+x.name+' — '+money(x.price*x.qty)).join('\n')+'\n\n*Total: '+money(t)+'*';if($('obs').value)txt+='\nObs.: '+$('obs').value;location.href='https://wa.me/5521973145934?text='+encodeURIComponent(txt)}async function load(){let r=await sb.from('products').select('*').eq('active',true).order('category').order('sort_order').order('name');if(r.error){$('menu').textContent='Erro ao carregar o cardápio.';return}products=r.data||[];render()}$('q').oninput=render;load();update();</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Açaí & Cia — Monte seu Copo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--y:#ffd21c;--p:#5a1d78;--p2:#7b2ca0;--bg:#fff9df;--ink:#281630;--muted:#756b78}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--y);padding:22px 16px;text-align:center;box-shadow:0 2px 12px #0002}
+header h1{margin:0;color:var(--p);font-size:34px}header p{margin:5px 0 0}
+.wrap{max-width:850px;margin:auto;padding:16px 14px 120px}
+.hero{background:#fff;border-radius:22px;padding:18px;box-shadow:0 5px 20px #0001;margin-bottom:16px}
+.hero h2{margin:0 0 6px;color:var(--p)}.hero p{margin:0;color:var(--muted)}
+.card{background:#fff;border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 5px 20px #0001}
+.step{font-size:12px;font-weight:900;color:var(--p);text-transform:uppercase;letter-spacing:.08em}
+.card h3{margin:4px 0 14px;font-size:21px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.option{border:2px solid #eee;border-radius:14px;padding:13px;cursor:pointer;display:flex;gap:9px;align-items:flex-start;background:#fff}
+.option input{margin-top:3px}.option:has(input:checked){border-color:var(--p);background:#fbf2ff}
+.option strong{display:block}.option small{color:var(--muted)}
+.price{color:var(--p);font-weight:900}
+.actions{display:flex;gap:10px;margin-top:16px}.actions button{flex:1;border:0;border-radius:13px;padding:13px;font-weight:900;cursor:pointer}
+.primary{background:var(--p);color:#fff}.secondary{background:#eee}.hidden{display:none!important}
+.summary{background:#fff3b1;border-radius:16px;padding:14px;line-height:1.5}.summary b{color:var(--p)}
+.cartbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(92%,650px);background:var(--p);color:#fff;border-radius:18px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 30px #0004;z-index:8}
+.cartbar button{background:var(--y);border:0;border-radius:12px;padding:10px 14px;font-weight:900}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:10}.modal.open{display:flex}
+.sheet{background:#fff;width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px}
+.line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eee}
+.field{margin:10px 0}.field label{font-size:13px;font-weight:800;display:block;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:11px;font-size:15px}
+.total{font-size:22px;font-weight:900;margin:15px 0}.muted{color:var(--muted);font-size:13px}
+.badge{display:inline-block;background:#f2e5f8;color:var(--p);padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}
+</style>
+</head>
+<body>
+<header><h1>🥤 Açaí & Cia</h1><p>Monte seu copo do seu jeito 💜</p></header>
+
+<main class="wrap">
+<section class="hero">
+<h2>Monte seu pedido</h2>
+<p>Escolha tamanho, tipo, sabor, complementos, coberturas e extras.</p>
+</section>
+
+<section class="card" id="step1">
+<div class="step">Etapa 1</div><h3>Escolha o tamanho</h3>
+<div class="grid" id="sizes"></div>
+<div class="actions"><button class="primary" onclick="go(2)">Continuar</button></div>
+</section>
+
+<section class="card hidden" id="step2">
+<div class="step">Etapa 2</div><h3>Você quer açaí ou sorvete?</h3>
+<div class="grid">
+<label class="option"><input type="radio" name="kind" value="Açaí"><span><strong>Açaí</strong><small>Escolha um sabor de açaí</small></span></label>
+<label class="option"><input type="radio" name="kind" value="Sorvetes"><span><strong>Sorvete</strong><small>Escolha um sabor de sorvete</small></span></label>
+</div>
+<div class="actions"><button class="secondary" onclick="go(1)">Voltar</button><button class="primary" onclick="go(3)">Continuar</button></div>
+</section>
+
+<section class="card hidden" id="step3">
+<div class="step">Etapa 3</div><h3>Escolha o sabor</h3>
+<div class="grid" id="flavors"></div>
+<div class="actions"><button class="secondary" onclick="go(2)">Voltar</button><button class="primary" onclick="go(4)">Continuar</button></div>
+</section>
+
+<section class="card hidden" id="step4">
+<div class="step">Etapa 4</div><h3>Complementos grátis</h3>
+<p class="muted">Marque quantos quiser.</p>
+<div class="grid" id="free"></div>
+<div class="actions"><button class="secondary" onclick="go(3)">Voltar</button><button class="primary" onclick="go(5)">Continuar</button></div>
+</section>
+
+<section class="card hidden" id="step5">
+<div class="step">Etapa 5</div><h3>Coberturas</h3>
+<div class="grid" id="toppings"></div>
+<div class="actions"><button class="secondary" onclick="go(4)">Voltar</button><button class="primary" onclick="go(6)">Continuar</button></div>
+</section>
+
+<section class="card hidden" id="step6">
+<div class="step">Etapa 6</div><h3>Extras</h3>
+<p class="muted">Os extras são adicionados ao valor do copo.</p>
+<div class="grid" id="extras"></div>
+<div class="actions"><button class="secondary" onclick="go(5)">Voltar</button><button class="primary" onclick="go(7)">Revisar pedido</button></div>
+</section>
+
+<section class="card hidden" id="step7">
+<div class="step">Etapa 7</div><h3>Seu copo</h3>
+<div class="summary" id="summary"></div>
+<div class="actions"><button class="secondary" onclick="go(6)">Voltar</button><button class="primary" onclick="addCup()">Adicionar ao carrinho 🛒</button></div>
+</section>
+</main>
+
+<div class="cartbar"><div><b id="count">0 itens</b><br><span id="sum">R$ 0,00</span></div><button onclick="openCart()">Ver carrinho</button></div>
+
+<div class="modal" id="modal"><div class="sheet">
+<div class="actions"><h2 style="flex:1;margin:0;color:var(--p)">Seu carrinho</h2><button class="secondary" onclick="closeCart()">Fechar</button></div>
+<div id="cart"></div>
+<div class="total">Total: <span id="modalTotal">R$ 0,00</span></div>
+<div class="field"><label>Nome</label><input id="customer" placeholder="Seu nome"></div>
+<div class="field"><label>Endereço</label><textarea id="address" rows="2" placeholder="Rua, número, bairro"></textarea></div>
+<div class="field"><label>Pagamento</label><select id="payment"><option>Pix</option><option>Dinheiro</option><option>Cartão</option></select></div>
+<div class="field"><label>Observações</label><textarea id="obs" rows="2" placeholder="Ex.: campainha não funciona"></textarea></div>
+<div class="actions"><button class="secondary" onclick="closeCart()">Continuar comprando</button><button class="primary" onclick="sendWhatsApp()">Enviar pelo WhatsApp 📲</button></div>
+</div></div>
+
+<script src="config.js"></script>
+<script>
+const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let data=[],cart=[];
+
+function byCat(cat){return data.filter(x=>x.category===cat && x.active)}
+function selectedVal(name){return document.querySelector(`input[name="${name}"]:checked`)?.value||''}
+function checkedVals(name){return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(x=>x.value)}
+function itemCard(p,type,name){
+ return `<label class="option"><input type="${type}" name="${name}" value="${esc(p.id)}"><span><strong>${esc(p.name)}</strong>${Number(p.price)>0?`<small class="price">${money(p.price)}</small>`:''}</span></label>`
+}
+function renderBase(){
+ $('sizes').innerHTML=byCat('Tamanhos').map(p=>itemCard(p,'radio','size')).join('');
+ $('free').innerHTML=byCat('Complementos grátis').map(p=>itemCard(p,'checkbox','free')).join('');
+ $('toppings').innerHTML=byCat('Coberturas').map(p=>itemCard(p,'checkbox','topping')).join('');
+ $('extras').innerHTML=byCat('Extras R$5').map(p=>itemCard(p,'checkbox','extra')).join('');
+}
+function go(n){
+ if(n===2 && !selectedVal('size')) return alert('Escolha um tamanho.');
+ if(n===3 && !selectedVal('kind')) return alert('Escolha Açaí ou Sorvete.');
+ if(n===3){
+   const kind=selectedVal('kind');
+   $('flavors').innerHTML=byCat(kind).map(p=>itemCard(p,'radio','flavor')).join('');
+ }
+ if(n===4 && !selectedVal('flavor')) return alert('Escolha um sabor.');
+ if(n===7) renderSummary();
+ for(let i=1;i<=7;i++) $('step'+i).classList.toggle('hidden',i!==n);
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function getById(id){return data.find(x=>x.id===id)}
+function currentCup(){
+ const size=getById(selectedVal('size')), flavor=getById(selectedVal('flavor'));
+ const free=checkedVals('free').map(getById).filter(Boolean);
+ const toppings=checkedVals('topping').map(getById).filter(Boolean);
+ const extras=checkedVals('extra').map(getById).filter(Boolean);
+ const total=Number(size?.price||0)+extras.reduce((a,x)=>a+Number(x.price||0),0);
+ return {size,flavor,free,toppings,extras,total,kind:selectedVal('kind')};
+}
+function renderSummary(){
+ const c=currentCup();
+ $('summary').innerHTML=
+ `<b>${esc(c.size?.name||'')}</b> • ${esc(c.kind)} • ${esc(c.flavor?.name||'')}<br>
+ ${c.free.length?'<span class="badge">Complementos</span> '+c.free.map(x=>esc(x.name)).join(', ')+'<br>':''}
+ ${c.toppings.length?'<span class="badge">Coberturas</span> '+c.toppings.map(x=>esc(x.name)).join(', ')+'<br>':''}
+ ${c.extras.length?'<span class="badge">Extras</span> '+c.extras.map(x=>esc(x.name)+' ('+money(x.price)+')').join(', ')+'<br>':''}
+ <br><b>Total: ${money(c.total)}</b>`;
+}
+function addCup(){
+ const c=currentCup();
+ cart.push({...c,cartId:crypto.randomUUID()});
+ updateCart(); resetBuilder(); go(1); alert('Copo adicionado ao carrinho!');
+}
+function resetBuilder(){
+ document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(i=>i.checked=false);
+}
+function describe(c){
+ let s=`${c.size.name} - ${c.kind} ${c.flavor.name}`;
+ if(c.free.length)s+=` | Complementos: ${c.free.map(x=>x.name).join(', ')}`;
+ if(c.toppings.length)s+=` | Coberturas: ${c.toppings.map(x=>x.name).join(', ')}`;
+ if(c.extras.length)s+=` | Extras: ${c.extras.map(x=>x.name).join(', ')}`;
+ return s;
+}
+function removeCart(id){cart=cart.filter(x=>x.cartId!==id);updateCart()}
+function updateCart(){
+ const total=cart.reduce((a,x)=>a+x.total,0);
+ $('count').textContent=cart.length+(cart.length===1?' item':' itens');
+ $('sum').textContent=money(total); $('modalTotal').textContent=money(total);
+ $('cart').innerHTML=cart.length?cart.map((x,i)=>`
+ <div class="line"><div><b>Copo ${i+1}</b><br><span class="muted">${esc(describe(x))}</span></div>
+ <div><b>${money(x.total)}</b><br><button class="secondary" onclick="removeCart('${x.cartId}')">Remover</button></div></div>`).join(''):'<p class="muted">Seu carrinho está vazio.</p>';
+}
+function openCart(){$('modal').classList.add('open');updateCart()}
+function closeCart(){$('modal').classList.remove('open')}
+function sendWhatsApp(){
+ if(!cart.length)return alert('Adicione pelo menos um copo.');
+ const name=$('customer').value.trim(), address=$('address').value.trim();
+ if(!name||!address)return alert('Preencha nome e endereço.');
+ const payment=$('payment').value, obs=$('obs').value.trim();
+ const total=cart.reduce((a,x)=>a+x.total,0);
+ let text='*NOVO PEDIDO — AÇAÍ & CIA*\\n\\n';
+ text+=`*Cliente:* ${name}\\n*Endereço:* ${address}\\n*Pagamento:* ${payment}\\n\\n`;
+ cart.forEach((x,i)=>{text+=`*Copo ${i+1}:* ${describe(x)} — ${money(x.total)}\\n`;});
+ text+=`\\n*TOTAL: ${money(total)}*`;
+ if(obs)text+=`\\n*Obs.:* ${obs}`;
+ window.open('https://wa.me/5521973145934?text='+encodeURIComponent(text),'_blank');
+}
+async function load(){
+ const {data:rows,error}=await sb.from('products').select('*').eq('active',true).order('category').order('sort_order').order('name');
+ if(error){document.querySelector('.wrap').innerHTML='<div class="card">Erro ao carregar o cardápio.</div>';console.error(error);return}
+ data=rows||[];renderBase();
+}
+load();updateCart();
+</script>
+</body></html>
